@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>AI Hospital Management</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>AI Hospital Resource Management</h1>
+
+    <div class="dashboard">
+
+        <div class="card">
+            <h3>Total Beds</h3>
+            <p>100</p>
+        </div>
+
+        <div class="card">
+            <h3>Available Beds</h3>
+            <p>{{ result.available_beds if result else 65 }}</p>
+        </div>
+
+        <div class="card">
+            <h3>Doctors Available</h3>
+            <p>4</p>
+        </div>
+
+    </div>
+
+    <form method="POST">
+
+        <h3>Patient Details</h3>
+
+        <input type="text"
+               name="patient_name"
+               placeholder="Enter Patient Name"
+               required>
+
+        <br><br>
+
+        <input type="number"
+               name="age"
+               placeholder="Enter Age"
+               required>
+
+        <br><br>
+
+        <select name="gender" required>
+
+            <option value="">
+                Select Gender
+            </option>
+
+            <option value="Male">
+                Male
+            </option>
+
+            <option value="Female">
+                Female
+            </option>
+
+        </select>
+
+        <br><br>
+
+        <h3>Select Symptoms</h3>
+
+        <label>
+            <input type="checkbox"
+                   name="symptoms"
+                   value="fever">
+            Fever
+        </label>
+
+        <br>
+
+        <label>
+            <input type="checkbox"
+                   name="symptoms"
+                   value="cough">
+            Cough
+        </label>
+
+        <br>
+
+        <label>
+            <input type="checkbox"
+                   name="symptoms"
+                   value="headache">
+            Headache
+        </label>
+
+        <br>
+
+        <label>
+            <input type="checkbox"
+                   name="symptoms"
+                   value="breathing issue">
+            Breathing Issue
+        </label>
+
+        <br>
+
+        <label>
+            <input type="checkbox"
+                   name="symptoms"
+                   value="heart problem">
+            Heart Problem
+        </label>
+
+        <br>
+
+        <label>
+            <input type="checkbox"
+                   name="symptoms"
+                   value="body pain">
+            Body Pain
+        </label>
+
+        <br>
+
+        <label>
+            <input type="checkbox"
+                   name="symptoms"
+                   value="nose bleeding">
+            Nose Bleeding
+        </label>
+
+        <br>
+
+        <label>
+            <input type="checkbox"
+                   name="symptoms"
+                   value="mouth bleeding">
+            Mouth Bleeding
+        </label>
+
+        <br><br>
+
+        <button type="submit">
+            Analyze Patient
+        </button>
+
+    </form>
+
+    {% if result %}
+
+    <div class="result">
+
+        <h2>Patient Report</h2>
+
+        <p>
+            <strong>Patient Name:</strong>
+            {{ result.patient_name }}
+        </p>
+
+        <p>
+            <strong>Age:</strong>
+            {{ result.age }}
+        </p>
+
+        <p>
+            <strong>Gender:</strong>
+            {{ result.gender }}
+        </p>
+
+        <p>
+            <strong>Disease:</strong>
+            {{ result.disease }}
+        </p>
+
+        <p>
+            <strong>Severity:</strong>
+            {{ result.severity }}
+        </p>
+
+        {% if result.severity == "HIGH" %}
+
+        <div class="emergency">
+
+            🚨 EMERGENCY CASE 🚨
+
+            <br>
+
+            Immediate Attention Required
+
+        </div>
+
+        {% endif %}
+
+        <p>
+            <strong>Doctor:</strong>
+            {{ result.doctor_name }}
+        </p>
+
+        <p>
+            <strong>Specialization:</strong>
+            {{ result.specialization }}
+        </p>
+
+        <p>
+            <strong>Status:</strong>
+            {{ result.status }}
+        </p>
+
+        <p>
+            <strong>Available Beds:</strong>
+            {{ result.available_beds }}
+        </p>
+
+    </div>
+
+    {% endif %}
+
+    {% if history %}
+
+    <div class="result">
+
+        <h2>Patient History</h2>
+
+        {% for patient in history %}
+
+        <hr>
+
+        <p>
+            <strong>Name:</strong>
+            {{ patient.patient_name }}
+        </p>
+
+        <p>
+            <strong>Disease:</strong>
+            {{ patient.disease }}
+        </p>
+
+        <p>
+            <strong>Severity:</strong>
+            {{ patient.severity }}
+        </p>
+
+        <p>
+            <strong>Doctor:</strong>
+            {{ patient.doctor_name }}
+        </p>
+
+        {% endfor %}
+
+    </div>
+
+    {% endif %}
+
+</div>
+
+</body>
+</html>
