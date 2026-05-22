@@ -513,8 +513,6 @@ def home():
     gender = ""
     phone = ""
 
-    # SEARCH FEATURE
-
     search_query = request.args.get("search", "")
 
     filtered_history = patient_history
@@ -585,8 +583,6 @@ def home():
 
                 result["ward"] = "No Beds Available"
                 doctor = "Not Available"
-
-            # SAVE HISTORY
 
             patient_history.append({
 
