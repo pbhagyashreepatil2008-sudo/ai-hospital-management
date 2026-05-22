@@ -1,11 +1,25 @@
 from flask import Flask, render_template_string, request
 import random
+from datetime import datetime
 
 app = Flask(__name__)
 
-# -----------------------------------
-# DOCTORS DATABASE
-# -----------------------------------
+# ------------------------------------
+# LOGIN DETAILS
+# ------------------------------------
+
+USERNAME = "admin"
+PASSWORD = "1234"
+
+# ------------------------------------
+# PATIENT HISTORY
+# ------------------------------------
+
+patient_history = []
+
+# ------------------------------------
+# DOCTOR DATABASE
+# ------------------------------------
 
 doctors = {
     "Cardiology": ["Dr. Sharma", "Dr. Reddy"],
@@ -13,12 +27,13 @@ doctors = {
     "Pulmonology": ["Dr. Khan"],
     "General": ["Dr. Kumar", "Dr. Rao"],
     "Emergency": ["Dr. Patel"],
-    "Gastroenterology": []
+    "Gastroenterology": [],
+    "ENT": ["Dr. Priya"]
 }
 
-# -----------------------------------
-# BED AVAILABILITY
-# -----------------------------------
+# ------------------------------------
+# BED MANAGEMENT
+# ------------------------------------
 
 beds = {
     "ICU": 3,
@@ -26,16 +41,9 @@ beds = {
     "Emergency Ward": 2
 }
 
-# -----------------------------------
-# LOGIN DETAILS
-# -----------------------------------
-
-USERNAME = "admin"
-PASSWORD = "1234"
-
-# -----------------------------------
-# HTML TEMPLATE
-# -----------------------------------
+# ------------------------------------
+# HTML PAGE
+# ------------------------------------
 
 HTML = """
 
@@ -55,29 +63,35 @@ body{
     padding: 0;
 }
 
-.container{
-    width: 80%;
-    margin: auto;
-    margin-top: 40px;
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0px 0px 10px gray;
-}
-
-h1{
+.header{
+    background: darkblue;
+    color: white;
+    padding: 20px;
     text-align: center;
-    color: darkblue;
 }
 
 .login-box{
-    width: 400px;
+    width: 350px;
     margin: auto;
     margin-top: 100px;
     background: white;
     padding: 30px;
     border-radius: 12px;
     box-shadow: 0px 0px 10px gray;
+}
+
+.container{
+    width: 90%;
+    margin: auto;
+    margin-top: 20px;
+}
+
+.card{
+    background: white;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 12px;
+    box-shadow: 0px 0px 8px lightgray;
 }
 
 input[type=text],
@@ -100,15 +114,14 @@ button{
 
 .symptoms{
     display: grid;
-    grid-template-columns: repeat(2,1fr);
+    grid-template-columns: repeat(3,1fr);
+    gap: 10px;
     margin-top: 20px;
 }
 
-.card{
-    background: #f2f6ff;
-    padding: 20px;
-    border-radius: 10px;
-    margin-top: 20px;
+.green{
+    color: green;
+    font-weight: bold;
 }
 
 .red{
@@ -116,9 +129,21 @@ button{
     font-weight: bold;
 }
 
-.green{
-    color: green;
-    font-weight: bold;
+.history-table{
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.history-table th,
+.history-table td{
+    border: 1px solid gray;
+    padding: 10px;
+    text-align: center;
+}
+
+.history-table th{
+    background: darkblue;
+    color: white;
 }
 
 </style>
@@ -127,21 +152,29 @@ button{
 
 <body>
 
+<div class="header">
+<h1>AI BASED HOSPITAL RESOURCE MANAGEMENT</h1>
+</div>
+
 {% if not logged_in %}
 
 <div class="login-box">
 
-<h1>Hospital Login</h1>
+<h2 align="center">Login</h2>
 
 <form method="POST">
 
 <input type="hidden" name="action" value="login">
 
-<input type="text" name="username"
-placeholder="Enter Username" required>
+<input type="text"
+name="username"
+placeholder="Enter Username"
+required>
 
-<input type="password" name="password"
-placeholder="Enter Password" required>
+<input type="password"
+name="password"
+placeholder="Enter Password"
+required>
 
 <button type="submit">Login</button>
 
@@ -157,13 +190,13 @@ placeholder="Enter Password" required>
 
 <div class="container">
 
-<h1>AI Based Hospital Resource Management</h1>
+<div class="card">
+
+<h2>Select Symptoms</h2>
 
 <form method="POST">
 
 <input type="hidden" name="action" value="analyze">
-
-<h3>Select Symptoms</h3>
 
 <div class="symptoms">
 
@@ -193,9 +226,13 @@ placeholder="Enter Password" required>
 
 </div>
 
-<button type="submit">Analyze Patient</button>
+<button type="submit">
+Analyze Patient
+</button>
 
 </form>
+
+</div>
 
 {% if result %}
 
@@ -232,14 +269,48 @@ Please go to another hospital. Sorry.
 <h3>Bed Availability</h3>
 
 <p>ICU Beds: {{ beds['ICU'] }}</p>
-
 <p>General Ward Beds: {{ beds['General Ward'] }}</p>
-
 <p>Emergency Ward Beds: {{ beds['Emergency Ward'] }}</p>
 
 </div>
 
 {% endif %}
+
+<div class="card">
+
+<h2>Patient History</h2>
+
+<table class="history-table">
+
+<tr>
+<th>Time</th>
+<th>Symptoms</th>
+<th>Disease</th>
+<th>Severity</th>
+<th>Doctor</th>
+</tr>
+
+{% for item in history %}
+
+<tr>
+
+<td>{{ item.time }}</td>
+
+<td>{{ item.symptoms }}</td>
+
+<td>{{ item.disease }}</td>
+
+<td>{{ item.severity }}</td>
+
+<td>{{ item.doctor }}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+</div>
 
 </div>
 
@@ -250,9 +321,9 @@ Please go to another hospital. Sorry.
 
 """
 
-# -----------------------------------
-# DISEASE PREDICTION FUNCTION
-# -----------------------------------
+# ------------------------------------
+# DISEASE PREDICTION
+# ------------------------------------
 
 def predict_disease(symptoms):
 
@@ -306,6 +377,14 @@ def predict_disease(symptoms):
             "ward": "Emergency Ward"
         }
 
+    elif "nose bleeding" in symptoms or "mouth bleeding" in symptoms:
+        return {
+            "disease": "ENT Infection",
+            "severity": "Medium",
+            "department": "ENT",
+            "ward": "General Ward"
+        }
+
     else:
         return {
             "disease": "Normal Fever",
@@ -314,9 +393,9 @@ def predict_disease(symptoms):
             "ward": "General Ward"
         }
 
-# -----------------------------------
+# ------------------------------------
 # MAIN ROUTE
-# -----------------------------------
+# ------------------------------------
 
 @app.route("/", methods=["GET", "POST"])
 
@@ -341,10 +420,11 @@ def home():
 
             if username == USERNAME and password == PASSWORD:
                 logged_in = True
+
             else:
                 error = "Invalid Username or Password"
 
-        # ANALYZE PATIENT
+        # ANALYZE
 
         elif action == "analyze":
 
@@ -364,6 +444,20 @@ def home():
 
                 doctor = random.choice(available_doctors)
 
+            else:
+
+                doctor = "Not Available"
+
+            # SAVE HISTORY
+
+            patient_history.append({
+                "time": datetime.now().strftime("%H:%M:%S"),
+                "symptoms": ", ".join(symptoms),
+                "disease": result["disease"],
+                "severity": result["severity"],
+                "doctor": doctor
+            })
+
     return render_template_string(
         HTML,
         logged_in=logged_in,
@@ -371,12 +465,13 @@ def home():
         doctor=doctor,
         doctor_available=doctor_available,
         beds=beds,
+        history=patient_history,
         error=error
     )
 
-# -----------------------------------
+# ------------------------------------
 # RUN APP
-# -----------------------------------
+# ------------------------------------
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
