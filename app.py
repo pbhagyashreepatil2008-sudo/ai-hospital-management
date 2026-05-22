@@ -4,22 +4,10 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-# -----------------------------------
-# LOGIN DETAILS
-# -----------------------------------
-
 USERNAME = "admin"
 PASSWORD = "1234"
 
-# -----------------------------------
-# PATIENT HISTORY
-# -----------------------------------
-
 patient_history = []
-
-# -----------------------------------
-# DOCTORS DATABASE
-# -----------------------------------
 
 doctors = {
     "Cardiology": ["Dr. Sharma", "Dr. Reddy"],
@@ -31,25 +19,16 @@ doctors = {
     "ENT": ["Dr. Priya"]
 }
 
-# -----------------------------------
-# BED MANAGEMENT
-# -----------------------------------
-
 beds = {
     "ICU": 3,
     "General Ward": 10,
     "Emergency Ward": 2
 }
 
-# -----------------------------------
-# HTML TEMPLATE
-# -----------------------------------
-
 HTML = """
 
 <!DOCTYPE html>
 <html>
-
 <head>
 
 <title>AI Hospital Resource Management</title>
@@ -58,94 +37,94 @@ HTML = """
 
 body{
     font-family: Arial;
-    background: #eef3ff;
-    margin: 0;
-    padding: 0;
+    background:#eef3ff;
+    margin:0;
+    padding:0;
 }
 
 .header{
-    background: darkblue;
-    color: white;
-    padding: 20px;
-    text-align: center;
+    background:darkblue;
+    color:white;
+    padding:20px;
+    text-align:center;
 }
 
 .login-box{
-    width: 350px;
-    margin: auto;
-    margin-top: 100px;
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0px 0px 10px gray;
+    width:350px;
+    margin:auto;
+    margin-top:100px;
+    background:white;
+    padding:30px;
+    border-radius:12px;
+    box-shadow:0px 0px 10px gray;
 }
 
 .container{
-    width: 90%;
-    margin: auto;
-    margin-top: 20px;
+    width:90%;
+    margin:auto;
+    margin-top:20px;
 }
 
 .card{
-    background: white;
-    padding: 20px;
-    margin-top: 20px;
-    border-radius: 12px;
-    box-shadow: 0px 0px 8px lightgray;
+    background:white;
+    padding:20px;
+    margin-top:20px;
+    border-radius:12px;
+    box-shadow:0px 0px 8px lightgray;
 }
 
 input[type=text],
 input[type=password],
 input[type=number],
 select{
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
+    width:100%;
+    padding:12px;
+    margin-top:10px;
 }
 
 button{
-    width: 100%;
-    padding: 12px;
-    background: darkblue;
-    color: white;
-    border: none;
-    margin-top: 20px;
-    cursor: pointer;
-    border-radius: 6px;
+    width:100%;
+    padding:12px;
+    background:darkblue;
+    color:white;
+    border:none;
+    margin-top:20px;
+    border-radius:6px;
+    cursor:pointer;
 }
 
 .symptoms{
-    display: grid;
-    grid-template-columns: repeat(3,1fr);
-    gap: 10px;
-    margin-top: 20px;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    margin-top:20px;
 }
 
 .green{
-    color: green;
-    font-weight: bold;
+    color:green;
+    font-weight:bold;
 }
 
 .red{
-    color: red;
-    font-weight: bold;
+    color:red;
+    font-weight:bold;
 }
 
 .history-table{
-    width: 100%;
-    border-collapse: collapse;
+    width:100%;
+    border-collapse:collapse;
 }
 
 .history-table th,
 .history-table td{
-    border: 1px solid gray;
-    padding: 10px;
-    text-align: center;
+    border:1px solid gray;
+    padding:10px;
+    text-align:center;
 }
 
 .history-table th{
-    background: darkblue;
-    color: white;
+    background:darkblue;
+    color:white;
 }
 
 </style>
@@ -218,9 +197,7 @@ required>
 <select name="gender">
 
 <option value="Male">Male</option>
-
 <option value="Female">Female</option>
-
 <option value="Other">Other</option>
 
 </select>
@@ -270,22 +247,16 @@ Analyze Patient
 <h2>Patient Report</h2>
 
 <p><b>Patient Name:</b> {{ patient_name }}</p>
-
 <p><b>Age:</b> {{ age }}</p>
-
 <p><b>Gender:</b> {{ gender }}</p>
-
 <p><b>Phone:</b> {{ phone }}</p>
 
 <hr>
 
 <p><b>Disease:</b> {{ result.disease }}</p>
-
 <p><b>Severity:</b> {{ result.severity }}</p>
-
 <p><b>Department:</b> {{ result.department }}</p>
-
-<p><b>Recommended Ward:</b> {{ result.ward }}</p>
+<p><b>Ward:</b> {{ result.ward }}</p>
 
 <h3>Doctor Allocation</h3>
 
@@ -299,8 +270,7 @@ Doctor Assigned:
 {% else %}
 
 <p class="red">
-No beds or doctors are available currently.<br>
-Please visit another hospital immediately.
+No beds or doctors are available currently.
 </p>
 
 {% endif %}
@@ -322,16 +292,11 @@ Please visit another hospital immediately.
 <table class="history-table">
 
 <tr>
-
 <th>Time</th>
 <th>Name</th>
-<th>Age</th>
-<th>Gender</th>
-<th>Phone</th>
 <th>Disease</th>
 <th>Severity</th>
 <th>Doctor</th>
-
 </tr>
 
 {% for item in history %}
@@ -340,9 +305,6 @@ Please visit another hospital immediately.
 
 <td>{{ item.time }}</td>
 <td>{{ item.name }}</td>
-<td>{{ item.age }}</td>
-<td>{{ item.gender }}</td>
-<td>{{ item.phone }}</td>
 <td>{{ item.disease }}</td>
 <td>{{ item.severity }}</td>
 <td>{{ item.doctor }}</td>
@@ -364,34 +326,157 @@ Please visit another hospital immediately.
 
 """
 
-# -----------------------------------
-# DISEASE PREDICTION
-# -----------------------------------
-
 def predict_disease(symptoms):
 
     symptoms = [s.lower() for s in symptoms]
 
     if "fever" in symptoms and "body pain" in symptoms:
         return {
-            "disease": "Dengue",
-            "severity": "High",
-            "department": "General",
-            "ward": "ICU"
+            "disease":"Dengue",
+            "severity":"High",
+            "department":"General",
+            "ward":"ICU"
         }
 
     elif "chest pain" in symptoms or "heart pain" in symptoms:
         return {
-            "disease": "Heart Disease",
-            "severity": "Critical",
-            "department": "Cardiology",
-            "ward": "ICU"
+            "disease":"Heart Disease",
+            "severity":"Critical",
+            "department":"Cardiology",
+            "ward":"ICU"
         }
 
     elif "breathing issue" in symptoms or "cough" in symptoms:
         return {
-            "disease": "Asthma",
-            "severity": "Medium",
-            "department": "Pulmonology",
-            "ward": "Emergency Ward"
+            "disease":"Asthma",
+            "severity":"Medium",
+            "department":"Pulmonology",
+            "ward":"Emergency Ward"
         }
+
+    elif "headache" in symptoms:
+        return {
+            "disease":"Migraine",
+            "severity":"Low",
+            "department":"Neurology",
+            "ward":"General Ward"
+        }
+
+    elif "vomiting" in symptoms or "stomach pain" in symptoms:
+        return {
+            "disease":"Food Poisoning",
+            "severity":"Medium",
+            "department":"Gastroenterology",
+            "ward":"General Ward"
+        }
+
+    elif "abdomen pain" in symptoms:
+        return {
+            "disease":"Appendicitis",
+            "severity":"High",
+            "department":"Emergency",
+            "ward":"Emergency Ward"
+        }
+
+    else:
+        return {
+            "disease":"Normal Fever",
+            "severity":"Low",
+            "department":"General",
+            "ward":"General Ward"
+        }
+
+@app.route("/", methods=["GET","POST"])
+
+def home():
+
+    logged_in = False
+    result = None
+    doctor = None
+    doctor_available = False
+    error = None
+
+    patient_name = ""
+    age = ""
+    gender = ""
+    phone = ""
+
+    if request.method == "POST":
+
+        action = request.form.get("action")
+
+        if action == "login":
+
+            username = request.form.get("username")
+            password = request.form.get("password")
+
+            if username == USERNAME and password == PASSWORD:
+                logged_in = True
+            else:
+                error = "Invalid Username or Password"
+
+        elif action == "analyze":
+
+            logged_in = True
+
+            patient_name = request.form.get("patient_name")
+            age = request.form.get("age")
+            gender = request.form.get("gender")
+            phone = request.form.get("phone")
+
+            symptoms = request.form.getlist("symptoms")
+
+            result = predict_disease(symptoms)
+
+            department = result["department"]
+            ward = result["ward"]
+
+            available_doctors = doctors.get(department, [])
+
+            if ward in beds and beds[ward] > 0:
+
+                beds[ward] -= 1
+
+                if len(available_doctors) > 0:
+
+                    doctor_available = True
+                    doctor = random.choice(available_doctors)
+
+                else:
+
+                    doctor = "Not Available"
+
+            else:
+
+                result["ward"] = "No Beds Available"
+                doctor = "Not Available"
+
+            patient_history.append({
+
+                "time": datetime.now().strftime("%H:%M:%S"),
+                "name": patient_name,
+                "disease": result["disease"],
+                "severity": result["severity"],
+                "doctor": doctor
+
+            })
+
+    return render_template_string(
+
+        HTML,
+        logged_in=logged_in,
+        result=result,
+        doctor=doctor,
+        doctor_available=doctor_available,
+        beds=beds,
+        history=patient_history,
+        error=error,
+        patient_name=patient_name,
+        age=age,
+        gender=gender,
+        phone=phone
+
+    )
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
