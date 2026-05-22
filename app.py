@@ -215,14 +215,6 @@ name="phone"
 placeholder="Enter Phone Number"
 required>
 
-<input type="text"
-name="blood_group"
-placeholder="Enter Blood Group">
-
-<input type="text"
-name="address"
-placeholder="Enter Address">
-
 <select name="gender">
 
 <option value="Male">Male</option>
@@ -285,10 +277,6 @@ Analyze Patient
 
 <p><b>Phone:</b> {{ phone }}</p>
 
-<p><b>Blood Group:</b> {{ blood_group }}</p>
-
-<p><b>Address:</b> {{ address }}</p>
-
 <hr>
 
 <p><b>Disease:</b> {{ result.disease }}</p>
@@ -311,8 +299,8 @@ Doctor Assigned:
 {% else %}
 
 <p class="red">
-Doctors are not available currently.<br>
-Please go to another hospital. Sorry.
+No beds or doctors are available currently.<br>
+Please visit another hospital immediately.
 </p>
 
 {% endif %}
@@ -407,157 +395,3 @@ def predict_disease(symptoms):
             "department": "Pulmonology",
             "ward": "Emergency Ward"
         }
-
-    elif "headache" in symptoms:
-        return {
-            "disease": "Migraine",
-            "severity": "Low",
-            "department": "Neurology",
-            "ward": "General Ward"
-        }
-
-    elif "vomiting" in symptoms or "stomach pain" in symptoms:
-        return {
-            "disease": "Food Poisoning",
-            "severity": "Medium",
-            "department": "Gastroenterology",
-            "ward": "General Ward"
-        }
-
-    elif "abdomen pain" in symptoms:
-        return {
-            "disease": "Appendicitis",
-            "severity": "High",
-            "department": "Emergency",
-            "ward": "Emergency Ward"
-        }
-
-    elif "nose bleeding" in symptoms or "mouth bleeding" in symptoms:
-        return {
-            "disease": "ENT Infection",
-            "severity": "Medium",
-            "department": "ENT",
-            "ward": "General Ward"
-        }
-
-    else:
-        return {
-            "disease": "Normal Fever",
-            "severity": "Low",
-            "department": "General",
-            "ward": "General Ward"
-        }
-
-# -----------------------------------
-# MAIN ROUTE
-# -----------------------------------
-
-@app.route("/", methods=["GET", "POST"])
-
-def home():
-
-    logged_in = False
-    result = None
-    doctor = None
-    doctor_available = False
-    error = None
-
-    patient_name = ""
-    age = ""
-    gender = ""
-    phone = ""
-    blood_group = ""
-    address = ""
-
-    if request.method == "POST":
-
-        action = request.form.get("action")
-
-        # LOGIN
-
-        if action == "login":
-
-            username = request.form.get("username")
-            password = request.form.get("password")
-
-            if username == USERNAME and password == PASSWORD:
-                logged_in = True
-
-            else:
-                error = "Invalid Username or Password"
-
-        # ANALYZE
-
-        elif action == "analyze":
-
-            logged_in = True
-
-            patient_name = request.form.get("patient_name")
-            age = request.form.get("age")
-            gender = request.form.get("gender")
-            phone = request.form.get("phone")
-            blood_group = request.form.get("blood_group")
-            address = request.form.get("address")
-
-            symptoms = request.form.getlist("symptoms")
-
-            result = predict_disease(symptoms)
-
-            department = result["department"]
-
-            available_doctors = doctors.get(department, [])
-
-            if len(available_doctors) > 0:
-
-                doctor_available = True
-
-                doctor = random.choice(available_doctors)
-
-            else:
-
-                doctor = "Not Available"
-
-            # SAVE HISTORY
-
-            patient_history.append({
-
-                "time": datetime.now().strftime("%H:%M:%S"),
-
-                "name": patient_name,
-
-                "age": age,
-
-                "gender": gender,
-
-                "phone": phone,
-
-                "disease": result["disease"],
-
-                "severity": result["severity"],
-
-                "doctor": doctor
-            })
-
-    return render_template_string(
-        HTML,
-        logged_in=logged_in,
-        result=result,
-        doctor=doctor,
-        doctor_available=doctor_available,
-        beds=beds,
-        history=patient_history,
-        error=error,
-        patient_name=patient_name,
-        age=age,
-        gender=gender,
-        phone=phone,
-        blood_group=blood_group,
-        address=address
-    )
-
-# -----------------------------------
-# RUN APP
-# -----------------------------------
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
