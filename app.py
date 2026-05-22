@@ -1,5 +1,4 @@
-print("UPDATED VERSION LOADED")
-from flask import Flask, render_template_string, request
+from flask import Flask, request, render_template_string
 import random
 
 app = Flask(__name__)
@@ -11,10 +10,10 @@ app = Flask(__name__)
 doctors = {
     "Cardiology": ["Dr. Sharma", "Dr. Reddy"],
     "Neurology": ["Dr. Mehta"],
-    "Pulmonology": ["Dr. Khan", "Dr. Priya"],
+    "Pulmonology": ["Dr. Khan"],
     "General": ["Dr. Kumar", "Dr. Rao"],
-    "Gastroenterology": [],
-    "Emergency": ["Dr. Patel"]
+    "Emergency": ["Dr. Patel"],
+    "Gastroenterology": []
 }
 
 # -------------------------------
@@ -28,14 +27,13 @@ beds = {
 }
 
 # -------------------------------
-# Disease Prediction Function
+# Disease Prediction
 # -------------------------------
 
 def predict_disease(symptoms):
 
-    symptoms = [s.lower() for s in symptoms]
+    symptoms = [s.strip().lower() for s in symptoms]
 
-    # Dengue
     if "fever" in symptoms and "body pain" in symptoms:
         return {
             "disease": "Dengue",
@@ -44,8 +42,7 @@ def predict_disease(symptoms):
             "ward": "ICU"
         }
 
-    # Heart Attack
-    elif "heart pain" in symptoms or "chest pain" in symptoms:
+    elif "chest pain" in symptoms or "heart pain" in symptoms:
         return {
             "disease": "Heart Disease",
             "severity": "Critical",
@@ -53,7 +50,6 @@ def predict_disease(symptoms):
             "ward": "ICU"
         }
 
-    # Asthma
     elif "breathing issue" in symptoms or "cough" in symptoms:
         return {
             "disease": "Asthma",
@@ -62,7 +58,6 @@ def predict_disease(symptoms):
             "ward": "Emergency Ward"
         }
 
-    # Migraine
     elif "headache" in symptoms:
         return {
             "disease": "Migraine",
@@ -71,7 +66,6 @@ def predict_disease(symptoms):
             "ward": "General Ward"
         }
 
-    # Food Poisoning
     elif "vomiting" in symptoms or "stomach pain" in symptoms:
         return {
             "disease": "Food Poisoning",
@@ -80,7 +74,6 @@ def predict_disease(symptoms):
             "ward": "General Ward"
         }
 
-    # Appendix
     elif "abdomen pain" in symptoms:
         return {
             "disease": "Appendicitis",
@@ -89,7 +82,6 @@ def predict_disease(symptoms):
             "ward": "Emergency Ward"
         }
 
-    # Default
     else:
         return {
             "disease": "Normal Fever",
@@ -97,7 +89,6 @@ def predict_disease(symptoms):
             "department": "General",
             "ward": "General Ward"
         }
-
 
 # -------------------------------
 # HTML PAGE
@@ -107,65 +98,67 @@ HTML = """
 
 <!DOCTYPE html>
 <html>
+
 <head>
-    <title>AI Hospital Resource Management</title>
 
-    <style>
+<title>AI Hospital Management</title>
 
-        body{
-            font-family: Arial;
-            background: #f4f7fc;
-            padding: 20px;
-        }
+<style>
 
-        .container{
-            max-width: 800px;
-            margin: auto;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px gray;
-        }
+body{
+    font-family: Arial;
+    background: #f2f6ff;
+    padding: 20px;
+}
 
-        h1{
-            text-align: center;
-            color: darkblue;
-        }
+.container{
+    max-width: 800px;
+    margin: auto;
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px gray;
+}
 
-        input{
-            width: 100%;
-            padding: 12px;
-            margin-top: 10px;
-        }
+h1{
+    text-align: center;
+    color: darkblue;
+}
 
-        button{
-            background: darkblue;
-            color: white;
-            padding: 12px;
-            width: 100%;
-            border: none;
-            margin-top: 20px;
-            cursor: pointer;
-        }
+input{
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+}
 
-        .result{
-            margin-top: 20px;
-            background: #eef;
-            padding: 20px;
-            border-radius: 10px;
-        }
+button{
+    width: 100%;
+    padding: 12px;
+    background: darkblue;
+    color: white;
+    border: none;
+    margin-top: 20px;
+    cursor: pointer;
+}
 
-        .danger{
-            color: red;
-            font-weight: bold;
-        }
+.result{
+    margin-top: 20px;
+    background: #eef;
+    padding: 20px;
+    border-radius: 10px;
+}
 
-        .success{
-            color: green;
-            font-weight: bold;
-        }
+.red{
+    color: red;
+    font-weight: bold;
+}
 
-    </style>
+.green{
+    color: green;
+    font-weight: bold;
+}
+
+</style>
 
 </head>
 
@@ -173,14 +166,14 @@ HTML = """
 
 <div class="container">
 
-<h1>AI Based Hospital Resource Management</h1>
+<h1>NEW AI HOSPITAL VERSION</h1>
 
 <form method="POST">
 
 <label>Enter Symptoms (comma separated)</label>
 
 <input type="text" name="symptoms"
-placeholder="fever, cough, headache, vomiting">
+placeholder="fever, cough, vomiting">
 
 <button type="submit">Analyze Patient</button>
 
@@ -196,24 +189,24 @@ placeholder="fever, cough, headache, vomiting">
 
 <p><b>Severity:</b> {{ result.severity }}</p>
 
-<p><b>Recommended Ward:</b> {{ result.ward }}</p>
-
 <p><b>Department:</b> {{ result.department }}</p>
+
+<p><b>Recommended Ward:</b> {{ result.ward }}</p>
 
 <h3>Doctor Status</h3>
 
 {% if doctor_available %}
 
-<p class="success">
+<p class="green">
 Doctor Assigned:
 <b>{{ doctor }}</b>
 </p>
 
 {% else %}
 
-<p class="danger">
+<p class="red">
 Doctors are not available currently.<br>
-Please visit another hospital. Sorry.
+Please go to another hospital. Sorry.
 </p>
 
 {% endif %}
@@ -253,18 +246,14 @@ def home():
 
         result = predict_disease(symptoms)
 
-        dept = result["department"]
+        department = result["department"]
 
-        available_doctors = doctors.get(dept, [])
+        available_doctors = doctors.get(department, [])
 
         if len(available_doctors) > 0:
 
             doctor_available = True
             doctor = random.choice(available_doctors)
-
-        else:
-
-            doctor_available = False
 
     return render_template_string(
         HTML,
