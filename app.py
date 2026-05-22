@@ -4,28 +4,12 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-# -----------------------------------
-# SECRET KEY
-# -----------------------------------
-
-app.secret_key = "hospital_secret_key"
-
-# -----------------------------------
-# LOGIN DETAILS
-# -----------------------------------
+app.secret_key = "hospital_secret"
 
 USERNAME = "admin"
 PASSWORD = "1234"
 
-# -----------------------------------
-# PATIENT HISTORY
-# -----------------------------------
-
 patient_history = []
-
-# -----------------------------------
-# DOCTORS DATABASE
-# -----------------------------------
 
 doctors = {
     "Cardiology": ["Dr. Sharma", "Dr. Reddy"],
@@ -37,19 +21,11 @@ doctors = {
     "ENT": ["Dr. Priya"]
 }
 
-# -----------------------------------
-# BED MANAGEMENT
-# -----------------------------------
-
 beds = {
     "ICU": 5,
     "General Ward": 15,
     "Emergency Ward": 3
 }
-
-# -----------------------------------
-# HTML TEMPLATE
-# -----------------------------------
 
 HTML = """
 
@@ -181,10 +157,6 @@ button{
     box-shadow:0px 0px 8px lightgray;
 }
 
-.search-box{
-    width:300px;
-}
-
 </style>
 
 </head>
@@ -233,8 +205,6 @@ required>
 
 <div class="container">
 
-<!-- DASHBOARD -->
-
 <div class="dashboard">
 
 <div class="dashboard-card">
@@ -258,8 +228,6 @@ required>
 </div>
 
 </div>
-
-<!-- PATIENT FORM -->
 
 <div class="card">
 
@@ -297,27 +265,16 @@ required>
 <div class="symptoms">
 
 <label><input type="checkbox" name="symptoms" value="fever"> Fever</label>
-
 <label><input type="checkbox" name="symptoms" value="cough"> Cough</label>
-
 <label><input type="checkbox" name="symptoms" value="headache"> Headache</label>
-
 <label><input type="checkbox" name="symptoms" value="vomiting"> Vomiting</label>
-
 <label><input type="checkbox" name="symptoms" value="stomach pain"> Stomach Pain</label>
-
 <label><input type="checkbox" name="symptoms" value="abdomen pain"> Abdomen Pain</label>
-
 <label><input type="checkbox" name="symptoms" value="breathing issue"> Breathing Issue</label>
-
 <label><input type="checkbox" name="symptoms" value="chest pain"> Chest Pain</label>
-
 <label><input type="checkbox" name="symptoms" value="body pain"> Body Pain</label>
-
 <label><input type="checkbox" name="symptoms" value="nose bleeding"> Nose Bleeding</label>
-
 <label><input type="checkbox" name="symptoms" value="mouth bleeding"> Mouth Bleeding</label>
-
 <label><input type="checkbox" name="symptoms" value="heart pain"> Heart Pain</label>
 
 </div>
@@ -329,8 +286,6 @@ Analyze Patient
 </form>
 
 </div>
-
-<!-- REPORT -->
 
 {% if result %}
 
@@ -350,16 +305,6 @@ Analyze Patient
 <p><b>Department:</b> {{ result.department }}</p>
 <p><b>Ward:</b> {{ result.ward }}</p>
 
-{% if result.severity == "Critical" %}
-
-<p class="red">
-🚑 Emergency Ambulance Required
-</p>
-
-{% endif %}
-
-<h3>Doctor Allocation</h3>
-
 {% if doctor_available %}
 
 <p class="green">
@@ -370,7 +315,7 @@ Doctor Assigned:
 {% else %}
 
 <p class="red">
-No beds or doctors are available currently.
+No beds or doctors available.
 </p>
 
 {% endif %}
@@ -385,29 +330,6 @@ No beds or doctors are available currently.
 
 {% endif %}
 
-<!-- SEARCH -->
-
-<div class="card">
-
-<h2>Search Patient History</h2>
-
-<form method="GET">
-
-<input type="text"
-name="search"
-placeholder="Search Patient Name"
-class="search-box">
-
-<button type="submit">
-Search
-</button>
-
-</form>
-
-</div>
-
-<!-- HISTORY -->
-
 <div class="card">
 
 <h2>Patient History</h2>
@@ -415,7 +337,6 @@ Search
 <table class="history-table">
 
 <tr>
-
 <th>Date & Time</th>
 <th>Name</th>
 <th>Age</th>
@@ -424,10 +345,9 @@ Search
 <th>Disease</th>
 <th>Severity</th>
 <th>Doctor</th>
-
 </tr>
 
-{% for item in filtered_history %}
+{% for item in history %}
 
 <tr>
 
@@ -456,10 +376,6 @@ Search
 </html>
 
 """
-
-# -----------------------------------
-# DISEASE PREDICTION
-# -----------------------------------
 
 def predict_disease(symptoms):
 
@@ -496,3 +412,137 @@ def predict_disease(symptoms):
             "department":"Neurology",
             "ward":"General Ward"
         }
+
+    elif "vomiting" in symptoms or "stomach pain" in symptoms:
+        return {
+            "disease":"Food Poisoning",
+            "severity":"Medium",
+            "department":"Gastroenterology",
+            "ward":"General Ward"
+        }
+
+    elif "abdomen pain" in symptoms:
+        return {
+            "disease":"Appendicitis",
+            "severity":"High",
+            "department":"Emergency",
+            "ward":"Emergency Ward"
+        }
+
+    else:
+        return {
+            "disease":"Normal Fever",
+            "severity":"Low",
+            "department":"General",
+            "ward":"General Ward"
+        }
+
+@app.route("/", methods=["GET", "POST"])
+
+def home():
+
+    logged_in = session.get("logged_in", False)
+
+    result = None
+    doctor = None
+    doctor_available = False
+    error = None
+
+    patient_name = ""
+    age = ""
+    gender = ""
+    phone = ""
+
+    if request.method == "POST":
+
+        action = request.form.get("action")
+
+        if action == "login":
+
+            username = request.form.get("username")
+            password = request.form.get("password")
+
+            if username == USERNAME and password == PASSWORD:
+
+                session["logged_in"] = True
+                return redirect(url_for("home"))
+
+            else:
+
+                error = "Invalid Username or Password"
+
+        elif action == "analyze":
+
+            patient_name = request.form.get("patient_name")
+            age = request.form.get("age")
+            gender = request.form.get("gender")
+            phone = request.form.get("phone")
+
+            symptoms = request.form.getlist("symptoms")
+
+            result = predict_disease(symptoms)
+
+            department = result["department"]
+            ward = result["ward"]
+
+            available_doctors = doctors.get(department, [])
+
+            if ward in beds and beds[ward] > 0:
+
+                beds[ward] -= 1
+
+                if len(available_doctors) > 0:
+
+                    doctor_available = True
+                    doctor = random.choice(available_doctors)
+
+                else:
+
+                    doctor = "Not Available"
+
+            else:
+
+                result["ward"] = "No Beds Available"
+                doctor = "Not Available"
+
+            patient_history.append({
+
+                "time": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
+
+                "name": patient_name,
+                "age": age,
+                "gender": gender,
+                "phone": phone,
+                "disease": result["disease"],
+                "severity": result["severity"],
+                "doctor": doctor
+
+            })
+
+    return render_template_string(
+
+        HTML,
+        logged_in=logged_in,
+        result=result,
+        doctor=doctor,
+        doctor_available=doctor_available,
+        beds=beds,
+        history=patient_history,
+        error=error,
+        patient_name=patient_name,
+        age=age,
+        gender=gender,
+        phone=phone
+
+    )
+
+@app.route("/logout")
+
+def logout():
+
+    session.clear()
+
+    return redirect(url_for("home"))
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
