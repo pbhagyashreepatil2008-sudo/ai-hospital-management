@@ -536,7 +536,7 @@ def predict_disease(symptoms):
 
 def home():
 
-    logged_in = True
+    logged_in = False
     result = None
     doctor = None
     doctor_available = False
