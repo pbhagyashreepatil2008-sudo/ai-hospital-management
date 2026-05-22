@@ -453,7 +453,7 @@ def home():
 
             patient_history.append({
 
-                "time": datetime.now().strftime("%H:%M:%S"),
+                "time": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
                 "name": patient_name,
                 "disease": result["disease"],
                 "severity": result["severity"],
