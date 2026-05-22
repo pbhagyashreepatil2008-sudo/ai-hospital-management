@@ -6,10 +6,22 @@ app = Flask(__name__)
 
 app.secret_key = "hospital_secret"
 
+# -----------------------------------
+# LOGIN DETAILS
+# -----------------------------------
+
 USERNAME = "admin"
 PASSWORD = "1234"
 
+# -----------------------------------
+# PATIENT HISTORY
+# -----------------------------------
+
 patient_history = []
+
+# -----------------------------------
+# DOCTORS DATABASE
+# -----------------------------------
 
 doctors = {
     "Cardiology": ["Dr. Sharma", "Dr. Reddy"],
@@ -21,11 +33,19 @@ doctors = {
     "ENT": ["Dr. Priya"]
 }
 
+# -----------------------------------
+# BED MANAGEMENT
+# -----------------------------------
+
 beds = {
     "ICU": 5,
     "General Ward": 15,
     "Emergency Ward": 3
 }
+
+# -----------------------------------
+# HTML TEMPLATE
+# -----------------------------------
 
 HTML = """
 
@@ -205,6 +225,8 @@ required>
 
 <div class="container">
 
+<!-- DASHBOARD -->
+
 <div class="dashboard">
 
 <div class="dashboard-card">
@@ -228,6 +250,8 @@ required>
 </div>
 
 </div>
+
+<!-- PATIENT FORM -->
 
 <div class="card">
 
@@ -287,6 +311,8 @@ Analyze Patient
 
 </div>
 
+<!-- REPORT -->
+
 {% if result %}
 
 <div class="card">
@@ -330,6 +356,28 @@ No beds or doctors available.
 
 {% endif %}
 
+<!-- SEARCH -->
+
+<div class="card">
+
+<h2>Search Patient</h2>
+
+<form method="GET">
+
+<input type="text"
+name="search"
+placeholder="Enter Patient Name">
+
+<button type="submit">
+Search
+</button>
+
+</form>
+
+</div>
+
+<!-- HISTORY -->
+
 <div class="card">
 
 <h2>Patient History</h2>
@@ -337,7 +385,9 @@ No beds or doctors available.
 <table class="history-table">
 
 <tr>
-<th>Date & Time</th>
+
+<th>Date</th>
+<th>Time</th>
 <th>Name</th>
 <th>Age</th>
 <th>Gender</th>
@@ -345,12 +395,14 @@ No beds or doctors available.
 <th>Disease</th>
 <th>Severity</th>
 <th>Doctor</th>
+
 </tr>
 
-{% for item in history %}
+{% for item in filtered_history %}
 
 <tr>
 
+<td>{{ item.date }}</td>
 <td>{{ item.time }}</td>
 <td>{{ item.name }}</td>
 <td>{{ item.age }}</td>
@@ -376,6 +428,10 @@ No beds or doctors available.
 </html>
 
 """
+
+# -----------------------------------
+# DISEASE PREDICTION
+# -----------------------------------
 
 def predict_disease(symptoms):
 
@@ -437,6 +493,10 @@ def predict_disease(symptoms):
             "ward":"General Ward"
         }
 
+# -----------------------------------
+# HOME ROUTE
+# -----------------------------------
+
 @app.route("/", methods=["GET", "POST"])
 
 def home():
@@ -453,9 +513,27 @@ def home():
     gender = ""
     phone = ""
 
+    # SEARCH FEATURE
+
+    search_query = request.args.get("search", "")
+
+    filtered_history = patient_history
+
+    if search_query:
+
+        filtered_history = [
+
+            item for item in patient_history
+
+            if search_query.lower() in item["name"].lower()
+
+        ]
+
     if request.method == "POST":
 
         action = request.form.get("action")
+
+        # LOGIN
 
         if action == "login":
 
@@ -465,11 +543,14 @@ def home():
             if username == USERNAME and password == PASSWORD:
 
                 session["logged_in"] = True
+
                 return redirect(url_for("home"))
 
             else:
 
                 error = "Invalid Username or Password"
+
+        # ANALYZE
 
         elif action == "analyze":
 
@@ -505,16 +586,26 @@ def home():
                 result["ward"] = "No Beds Available"
                 doctor = "Not Available"
 
+            # SAVE HISTORY
+
             patient_history.append({
 
-                "time": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
+                "date": datetime.now().strftime("%d-%m-%Y"),
+
+                "time": datetime.now().strftime("%H:%M:%S"),
 
                 "name": patient_name,
+
                 "age": age,
+
                 "gender": gender,
+
                 "phone": phone,
+
                 "disease": result["disease"],
+
                 "severity": result["severity"],
+
                 "doctor": doctor
 
             })
@@ -528,6 +619,7 @@ def home():
         doctor_available=doctor_available,
         beds=beds,
         history=patient_history,
+        filtered_history=filtered_history,
         error=error,
         patient_name=patient_name,
         age=age,
@@ -536,6 +628,10 @@ def home():
 
     )
 
+# -----------------------------------
+# LOGOUT
+# -----------------------------------
+
 @app.route("/logout")
 
 def logout():
@@ -543,6 +639,10 @@ def logout():
     session.clear()
 
     return redirect(url_for("home"))
+
+# -----------------------------------
+# RUN APP
+# -----------------------------------
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
