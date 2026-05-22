@@ -4,22 +4,22 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-# ------------------------------------
+# -----------------------------------
 # LOGIN DETAILS
-# ------------------------------------
+# -----------------------------------
 
 USERNAME = "admin"
 PASSWORD = "1234"
 
-# ------------------------------------
+# -----------------------------------
 # PATIENT HISTORY
-# ------------------------------------
+# -----------------------------------
 
 patient_history = []
 
-# ------------------------------------
-# DOCTOR DATABASE
-# ------------------------------------
+# -----------------------------------
+# DOCTORS DATABASE
+# -----------------------------------
 
 doctors = {
     "Cardiology": ["Dr. Sharma", "Dr. Reddy"],
@@ -31,9 +31,9 @@ doctors = {
     "ENT": ["Dr. Priya"]
 }
 
-# ------------------------------------
+# -----------------------------------
 # BED MANAGEMENT
-# ------------------------------------
+# -----------------------------------
 
 beds = {
     "ICU": 3,
@@ -41,9 +41,9 @@ beds = {
     "Emergency Ward": 2
 }
 
-# ------------------------------------
-# HTML PAGE
-# ------------------------------------
+# -----------------------------------
+# HTML TEMPLATE
+# -----------------------------------
 
 HTML = """
 
@@ -95,7 +95,9 @@ body{
 }
 
 input[type=text],
-input[type=password]{
+input[type=password],
+input[type=number],
+select{
     width: 100%;
     padding: 12px;
     margin-top: 10px;
@@ -192,11 +194,46 @@ required>
 
 <div class="card">
 
-<h2>Select Symptoms</h2>
+<h2>Patient Details</h2>
 
 <form method="POST">
 
 <input type="hidden" name="action" value="analyze">
+
+<input type="text"
+name="patient_name"
+placeholder="Enter Patient Name"
+required>
+
+<input type="number"
+name="age"
+placeholder="Enter Age"
+required>
+
+<input type="text"
+name="phone"
+placeholder="Enter Phone Number"
+required>
+
+<input type="text"
+name="blood_group"
+placeholder="Enter Blood Group">
+
+<input type="text"
+name="address"
+placeholder="Enter Address">
+
+<select name="gender">
+
+<option value="Male">Male</option>
+
+<option value="Female">Female</option>
+
+<option value="Other">Other</option>
+
+</select>
+
+<h2>Select Symptoms</h2>
 
 <div class="symptoms">
 
@@ -239,6 +276,20 @@ Analyze Patient
 <div class="card">
 
 <h2>Patient Report</h2>
+
+<p><b>Patient Name:</b> {{ patient_name }}</p>
+
+<p><b>Age:</b> {{ age }}</p>
+
+<p><b>Gender:</b> {{ gender }}</p>
+
+<p><b>Phone:</b> {{ phone }}</p>
+
+<p><b>Blood Group:</b> {{ blood_group }}</p>
+
+<p><b>Address:</b> {{ address }}</p>
+
+<hr>
 
 <p><b>Disease:</b> {{ result.disease }}</p>
 
@@ -283,11 +334,16 @@ Please go to another hospital. Sorry.
 <table class="history-table">
 
 <tr>
+
 <th>Time</th>
-<th>Symptoms</th>
+<th>Name</th>
+<th>Age</th>
+<th>Gender</th>
+<th>Phone</th>
 <th>Disease</th>
 <th>Severity</th>
 <th>Doctor</th>
+
 </tr>
 
 {% for item in history %}
@@ -295,13 +351,12 @@ Please go to another hospital. Sorry.
 <tr>
 
 <td>{{ item.time }}</td>
-
-<td>{{ item.symptoms }}</td>
-
+<td>{{ item.name }}</td>
+<td>{{ item.age }}</td>
+<td>{{ item.gender }}</td>
+<td>{{ item.phone }}</td>
 <td>{{ item.disease }}</td>
-
 <td>{{ item.severity }}</td>
-
 <td>{{ item.doctor }}</td>
 
 </tr>
@@ -321,9 +376,9 @@ Please go to another hospital. Sorry.
 
 """
 
-# ------------------------------------
+# -----------------------------------
 # DISEASE PREDICTION
-# ------------------------------------
+# -----------------------------------
 
 def predict_disease(symptoms):
 
@@ -393,9 +448,9 @@ def predict_disease(symptoms):
             "ward": "General Ward"
         }
 
-# ------------------------------------
+# -----------------------------------
 # MAIN ROUTE
-# ------------------------------------
+# -----------------------------------
 
 @app.route("/", methods=["GET", "POST"])
 
@@ -406,6 +461,13 @@ def home():
     doctor = None
     doctor_available = False
     error = None
+
+    patient_name = ""
+    age = ""
+    gender = ""
+    phone = ""
+    blood_group = ""
+    address = ""
 
     if request.method == "POST":
 
@@ -430,6 +492,13 @@ def home():
 
             logged_in = True
 
+            patient_name = request.form.get("patient_name")
+            age = request.form.get("age")
+            gender = request.form.get("gender")
+            phone = request.form.get("phone")
+            blood_group = request.form.get("blood_group")
+            address = request.form.get("address")
+
             symptoms = request.form.getlist("symptoms")
 
             result = predict_disease(symptoms)
@@ -451,10 +520,21 @@ def home():
             # SAVE HISTORY
 
             patient_history.append({
+
                 "time": datetime.now().strftime("%H:%M:%S"),
-                "symptoms": ", ".join(symptoms),
+
+                "name": patient_name,
+
+                "age": age,
+
+                "gender": gender,
+
+                "phone": phone,
+
                 "disease": result["disease"],
+
                 "severity": result["severity"],
+
                 "doctor": doctor
             })
 
@@ -466,12 +546,18 @@ def home():
         doctor_available=doctor_available,
         beds=beds,
         history=patient_history,
-        error=error
+        error=error,
+        patient_name=patient_name,
+        age=age,
+        gender=gender,
+        phone=phone,
+        blood_group=blood_group,
+        address=address
     )
 
-# ------------------------------------
+# -----------------------------------
 # RUN APP
-# ------------------------------------
+# -----------------------------------
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
