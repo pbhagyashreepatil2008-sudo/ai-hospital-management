@@ -1,13 +1,25 @@
-from flask import Flask, render_template_string, request
+from flask import Flask, render_template_string, request, redirect, url_for
 import random
 from datetime import datetime
 
 app = Flask(__name__)
 
+# -----------------------------------
+# LOGIN DETAILS
+# -----------------------------------
+
 USERNAME = "admin"
 PASSWORD = "1234"
 
+# -----------------------------------
+# PATIENT HISTORY
+# -----------------------------------
+
 patient_history = []
+
+# -----------------------------------
+# DOCTORS DATABASE
+# -----------------------------------
 
 doctors = {
     "Cardiology": ["Dr. Sharma", "Dr. Reddy"],
@@ -15,20 +27,29 @@ doctors = {
     "Pulmonology": ["Dr. Khan"],
     "General": ["Dr. Kumar", "Dr. Rao"],
     "Emergency": ["Dr. Patel"],
-    "Gastroenterology": [],
+    "Gastroenterology": ["Dr. Arjun"],
     "ENT": ["Dr. Priya"]
 }
 
+# -----------------------------------
+# BED MANAGEMENT
+# -----------------------------------
+
 beds = {
-    "ICU": 3,
-    "General Ward": 10,
-    "Emergency Ward": 2
+    "ICU": 5,
+    "General Ward": 15,
+    "Emergency Ward": 3
 }
+
+# -----------------------------------
+# HTML TEMPLATE
+# -----------------------------------
 
 HTML = """
 
 <!DOCTYPE html>
 <html>
+
 <head>
 
 <title>AI Hospital Resource Management</title>
@@ -47,6 +68,19 @@ body{
     color:white;
     padding:20px;
     text-align:center;
+}
+
+.top-bar{
+    text-align:right;
+    padding:10px 30px;
+}
+
+.logout-btn{
+    background:red;
+    color:white;
+    padding:10px 20px;
+    text-decoration:none;
+    border-radius:6px;
 }
 
 .login-box{
@@ -110,6 +144,11 @@ button{
     font-weight:bold;
 }
 
+.orange{
+    color:orange;
+    font-weight:bold;
+}
+
 .history-table{
     width:100%;
     border-collapse:collapse;
@@ -125,6 +164,24 @@ button{
 .history-table th{
     background:darkblue;
     color:white;
+}
+
+.dashboard{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:20px;
+}
+
+.dashboard-card{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    text-align:center;
+    box-shadow:0px 0px 8px lightgray;
+}
+
+.search-box{
+    width:300px;
 }
 
 </style>
@@ -169,7 +226,39 @@ required>
 
 {% else %}
 
+<div class="top-bar">
+<a href="/logout" class="logout-btn">Logout</a>
+</div>
+
 <div class="container">
+
+<!-- DASHBOARD -->
+
+<div class="dashboard">
+
+<div class="dashboard-card">
+<h2>{{ history|length }}</h2>
+<p>Total Patients</p>
+</div>
+
+<div class="dashboard-card">
+<h2>{{ beds['ICU'] }}</h2>
+<p>ICU Beds Left</p>
+</div>
+
+<div class="dashboard-card">
+<h2>{{ beds['General Ward'] }}</h2>
+<p>General Beds Left</p>
+</div>
+
+<div class="dashboard-card">
+<h2>{{ beds['Emergency Ward'] }}</h2>
+<p>Emergency Beds Left</p>
+</div>
+
+</div>
+
+<!-- PATIENT FORM -->
 
 <div class="card">
 
@@ -240,6 +329,8 @@ Analyze Patient
 
 </div>
 
+<!-- REPORT -->
+
 {% if result %}
 
 <div class="card">
@@ -257,6 +348,14 @@ Analyze Patient
 <p><b>Severity:</b> {{ result.severity }}</p>
 <p><b>Department:</b> {{ result.department }}</p>
 <p><b>Ward:</b> {{ result.ward }}</p>
+
+{% if result.severity == "Critical" %}
+
+<p class="red">
+🚑 Emergency Ambulance Required
+</p>
+
+{% endif %}
 
 <h3>Doctor Allocation</h3>
 
@@ -285,6 +384,29 @@ No beds or doctors are available currently.
 
 {% endif %}
 
+<!-- SEARCH -->
+
+<div class="card">
+
+<h2>Search Patient History</h2>
+
+<form method="GET">
+
+<input type="text"
+name="search"
+placeholder="Search Patient Name"
+class="search-box">
+
+<button type="submit">
+Search
+</button>
+
+</form>
+
+</div>
+
+<!-- HISTORY -->
+
 <div class="card">
 
 <h2>Patient History</h2>
@@ -292,19 +414,27 @@ No beds or doctors are available currently.
 <table class="history-table">
 
 <tr>
-<th>Time</th>
+
+<th>Date & Time</th>
 <th>Name</th>
+<th>Age</th>
+<th>Gender</th>
+<th>Phone</th>
 <th>Disease</th>
 <th>Severity</th>
 <th>Doctor</th>
+
 </tr>
 
-{% for item in history %}
+{% for item in filtered_history %}
 
 <tr>
 
 <td>{{ item.time }}</td>
 <td>{{ item.name }}</td>
+<td>{{ item.age }}</td>
+<td>{{ item.gender }}</td>
+<td>{{ item.phone }}</td>
 <td>{{ item.disease }}</td>
 <td>{{ item.severity }}</td>
 <td>{{ item.doctor }}</td>
@@ -325,6 +455,10 @@ No beds or doctors are available currently.
 </html>
 
 """
+
+# -----------------------------------
+# DISEASE PREDICTION
+# -----------------------------------
 
 def predict_disease(symptoms):
 
@@ -378,6 +512,14 @@ def predict_disease(symptoms):
             "ward":"Emergency Ward"
         }
 
+    elif "nose bleeding" in symptoms or "mouth bleeding" in symptoms:
+        return {
+            "disease":"ENT Infection",
+            "severity":"Medium",
+            "department":"ENT",
+            "ward":"General Ward"
+        }
+
     else:
         return {
             "disease":"Normal Fever",
@@ -386,11 +528,15 @@ def predict_disease(symptoms):
             "ward":"General Ward"
         }
 
-@app.route("/", methods=["GET","POST"])
+# -----------------------------------
+# MAIN ROUTE
+# -----------------------------------
+
+@app.route("/", methods=["GET", "POST"])
 
 def home():
 
-    logged_in = False
+    logged_in = True
     result = None
     doctor = None
     doctor_available = False
@@ -401,9 +547,22 @@ def home():
     gender = ""
     phone = ""
 
+    search_query = request.args.get("search", "")
+
+    filtered_history = patient_history
+
+    if search_query:
+
+        filtered_history = [
+            item for item in patient_history
+            if search_query.lower() in item["name"].lower()
+        ]
+
     if request.method == "POST":
 
         action = request.form.get("action")
+
+        # LOGIN
 
         if action == "login":
 
@@ -412,12 +571,14 @@ def home():
 
             if username == USERNAME and password == PASSWORD:
                 logged_in = True
+
             else:
+                logged_in = False
                 error = "Invalid Username or Password"
 
-        elif action == "analyze":
+        # ANALYZE
 
-            logged_in = True
+        elif action == "analyze":
 
             patient_name = request.form.get("patient_name")
             age = request.form.get("age")
@@ -454,9 +615,19 @@ def home():
             patient_history.append({
 
                 "time": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
+
                 "name": patient_name,
+
+                "age": age,
+
+                "gender": gender,
+
+                "phone": phone,
+
                 "disease": result["disease"],
+
                 "severity": result["severity"],
+
                 "doctor": doctor
 
             })
@@ -470,6 +641,7 @@ def home():
         doctor_available=doctor_available,
         beds=beds,
         history=patient_history,
+        filtered_history=filtered_history,
         error=error,
         patient_name=patient_name,
         age=age,
@@ -477,6 +649,19 @@ def home():
         phone=phone
 
     )
+
+# -----------------------------------
+# LOGOUT
+# -----------------------------------
+
+@app.route("/logout")
+
+def logout():
+    return redirect(url_for("home"))
+
+# -----------------------------------
+# RUN APP
+# -----------------------------------
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
